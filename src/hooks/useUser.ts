@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUser, updateUser, deleteUser } from "../api/userApi";
+import { login, logout } from "../api/authApi";
 
 export const useUser = (userType) => {
   return useQuery({
@@ -26,5 +27,17 @@ export const useDeleteUser = (userType) => {
     onSuccess: () => {
       queryClient.removeQueries(["user", userType]); // حذف الكاش
     },
+  });
+};
+
+export const useLogin = () => {
+  return useMutation({
+    mutationFn: login,
+  });
+};
+
+export const useLogout = () => {
+  return useMutation({
+    mutationFn: logout,
   });
 };
