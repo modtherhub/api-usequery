@@ -3,14 +3,13 @@ import Cookies from "js-cookie";
 
 export const baseURL = import.meta.env.VITE_API_URL;
 
-// إنشاء instance من axios
+// Create an Axios instance
 const api = axios.create({
-  /* vookeie.set
-  coojies.get */
-  baseURL: baseURL, // server
-  withCredentials: true, // send cookies
+  baseURL: baseURL, // Base server URL
+  withCredentials: true, // Send cookies with requests
 });
 
+// Get Authorization header from cookie
 export const getAuthHeaders = () => {
   const token = Cookies.get("accessToken"); // assumes cookie is named "accessToken"
   return {
@@ -18,8 +17,7 @@ export const getAuthHeaders = () => {
   };
 };
 
-// Response interceptor
-// Interceptor detrmine if the token expir response 
+// Response interceptor to handle errors globally
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -27,39 +25,39 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const code = error.response?.data?.code;
 
-    // 401 token expired / missing / invalid
+    // handle 401 errors expired / missing / invalid token
     if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       if (code === "EXPIRED") {
         try {
-          await api.post("/refresh");
+          await api.post("/refresh"); // attempt to refresh the token
           return api(originalRequest); // retry original request
         } catch (refreshError) {
           console.error("Refresh failed:", refreshError);
-          // هنا ممكن تعمل logout redirect
+          // redirect user to login features
         }
       } else if (code === "MISSING_ACCESS_TOKEN" || code === "INVALID") {
         console.error("User token issue:", code);
-        // ممكن تظهر رسالة للمستخدم تطلب منه تسجيل الدخول
+        // notify user to log in features
       }
     }
 
-    // 404 user not found
+    // handle 404 (user not found)
     if (status === 404 && code === "NO_USER") {
       console.error("User not found:", error.response.data.message);
-      // ممكن تعرض رسالة للمستخدم أو redirect
+      // show message or redirect features
     }
 
-    // 400 errors من PATCH
+    // handle 400 invalid input
     if (status === 400) {
       console.error("Invalid input:", error.response.data.message);
     }
 
-    // 500 server errors
+    // handel 500 server error
     if (status === 500) {
       console.error("Server error:", error.response.data.message);
-      // ممكن تعرض alert أو toast
+      // display alert or toast
     }
 
     return Promise.reject(error);
